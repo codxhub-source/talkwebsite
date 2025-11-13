@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome - Talk</title>
+    <link rel="stylesheet" href="../../static/css/style.css">
+</head>
+
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+ 
+
+  
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="banner">
+  <div class="welcome-container">
+    <h1 class="welcome-title">Welcome {{ user.username }}</h1>
+   
+
+    <div class="action-buttons">
+      <a class="btn btn-outline-primary" href="{% url 'search' %}">
+        <i class="bi bi-search"></i> Search Opposite
+      </a>
+      <a class="btn btn-outline-success" href="{% url 'random' %}">
+        <i class="bi bi-shuffle"></i> Random Profile
+      </a>
+      <a class="btn btn-outline-secondary" href="{% url 'conversations_list' %}">
+        <i class="bi bi-chat-dots"></i> Conversations
+      </a>
+    </div>
+
+    <div class="quick-picks">
+      <h3>Quick picks ({{ opposites|length }})</h3>
+      <div class="gender-buttons">
+        <a href="{% url 'users_by_gender' 'M' %}" class="btn btn-outline-primary">
+          <i class="bi bi-gender-male"></i> Males
+        </a>
+        <a href="{% url 'users_by_gender' 'F' %}" class="btn btn-outline-primary">
+          <i class="bi bi-gender-female"></i> Females
+        </a>
+      </div>
+
+      {% if opposites %}
+        <div class="user-grid mt-4">
+          <!-- User cards will go here -->
+          <p class="text-muted">User profiles will be displayed here</p>
+        </div>
+      {% else %}
+        <div class="alert alert-info mt-4" role="alert">
+          No users of the opposite gender found yet.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+
+<!-- New Features Section -->
+<section class="feature-section">
+  <div class="container">
+    <h2 class="text-center mb-4">Why Choose Our App</h2>
+    <div class="row">
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-people"></i>
+          </div>
+          <h4>Connect Instantly</h4>
+          <p>Find and connect with like-minded people in your area instantly.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-shield-lock"></i>
+          </div>
+          <h4>Safe & Secure</h4>
+          <p>Your privacy and security are our top priorities.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="bi bi-chat-dots"></i>
+          </div>
+          <h4>Real-time Chat</h4>
+          <p>Enjoy seamless real-time conversations with your matches.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- App Screenshot Section -->
+<section class="py-5 bg-light">
+  <div class="container text-center">
+    <h2 class="mb-4">Simple & Intuitive Interface</h2>
+    <img src="{% static 'images/banner.jpeg' %}" alt="App Screenshot" class="app-screenshot">
+    <p class="mt-3">Experience our user-friendly interface designed for seamless navigation</p>
+  </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="testimonial-section">
+  <div class="container">
+    <h2 class="text-center mb-4">What Our Users Say</h2>
+    <div class="row">
+      <div class="col-md-4">
+        <div class="testimonial-card">
+          <img src="{% static 'images/men.jpeg' %}" alt="User 1" class="testimonial-avatar">
+          <p>"This app helped me meet amazing people in my area. Highly recommended!"</p>
+          <strong>- Men</strong>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="testimonial-card">
+          <img src="{% static 'images/women.jpeg' %}" alt="User 2" class="testimonial-avatar">
+          <p>"The interface is so easy to use, and I've made some great connections!"</p>
+          <strong>- Women</strong>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="testimonial-card">
+          <img src="{% static 'images/mens.jpeg' %}" alt="User 3" class="testimonial-avatar">
+          <p>"Best way to meet new people with similar interests. Love it!"</p>
+          <strong>- Men</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Call to Action Section -->
+<section class="cta-section">
+  <div class="container">
+    <h2>Ready to Start Connecting?</h2>
+    <p class="lead">Join thousands of users who found meaningful connections</p>
+   
+  </div>
+</section>
+
+
+
+
+{% endblock %}
+{% block extra_js %}
+</body>
+
+<script>
+  // Add any JavaScript for animations or interactions here
+  document.addEventListener('DOMContentLoaded', function() {
+    // Add smooth scroll to all links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelector(this.getAttribute('href')).scrollIntoView({
+          behavior: 'smooth'
+        });
+      });
+    });
+  });
+
+
+
+
+  document.addEventListener('DOMContentLoaded', function() {
+    const characterSelection = document.getElementById('character-selection');
+    const gameArea = document.getElementById('game-area');
+    const gameOverScreen = document.getElementById('game-over');
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const heartsElement = document.getElementById('hearts');
+    const scoreElement = document.getElementById('score');
+    const finalScoreElement = document.getElementById('final-score');
+    const playAgainButton = document.getElementById('play-again');
+
+    let game;
+    let selectedCharacter = 'boy';
+    let hearts = 3;
+    let score = 0;
+
+    // Character selection
+    document.querySelectorAll('.character').forEach(char => {
+        char.addEventListener('click', function() {
+            selectedCharacter = this.dataset.char;
+            characterSelection.style.display = 'none';
+            gameArea.style.display = 'block';
+            startGame();
+        });
+    });
+
+    // Game objects
+    const player = {
+        x: canvas.width / 2 - 25,
+        y: canvas.height - 80,
+        width: 50,
+        height: 70,
+        speed: 8,
+        color: '#ff69b4',
+        isMovingLeft: false,
+        isMovingRight: false,
+        isShooting: false,
+        lastShot: 0,
+        shootDelay: 500, // milliseconds
+        bullets: []
+    };
+
+    const enemies = [];
+    const heartsList = [];
+    let gameOver = false;
+    let animationId;
+
+    // Event listeners
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    playAgainButton.addEventListener('click', resetGame);
+
+    function handleKeyDown(e) {
+        if (gameOver) return;
+        
+        switch(e.key) {
+            case 'ArrowLeft':
+                player.isMovingLeft = true;
+                break;
+            case 'ArrowRight':
+                player.isMovingRight = true;
+                break;
+            case ' ':
+                player.isShooting = true;
+                break;
+        }
+    }
+
+    function handleKeyUp(e) {
+        switch(e.key) {
+            case 'ArrowLeft':
+                player.isMovingLeft = false;
+                break;
+            case 'ArrowRight':
+                player.isMovingRight = false;
+                break;
+            case ' ':
+                player.isShooting = false;
+                break;
+        }
+    }
+
+    function startGame() {
+        resetGame();
+        gameLoop();
+        spawnEnemies();
+    }
+
+    function resetGame() {
+        // Reset game state
+        hearts = 3;
+        score = 0;
+        gameOver = false;
+        player.bullets = [];
+        enemies.length = 0;
+        heartsList.length = 0;
+        
+        // Reset UI
+        heartsElement.textContent = hearts;
+        scoreElement.textContent = score;
+        gameOverScreen.style.display = 'none';
+        gameArea.style.display = 'block';
+        
+        // Cancel any existing animation
+        if (animationId) {
+            cancelAnimationFrame(animationId);
+        }
+        
+        // Start new game loop
+        gameLoop();
+    }
+
+    function gameLoop(timestamp) {
+        if (gameOver) return;
+        
+        update(timestamp);
+        draw();
+        
+        animationId = requestAnimationFrame(gameLoop);
+    }
+
+    function update(timestamp) {
+        // Update player position
+        if (player.isMovingLeft) player.x -= player.speed;
+        if (player.isMovingRight) player.x += player.speed;
+        
+        // Keep player in bounds
+        player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+        
+        // Shooting
+        if (player.isShooting && timestamp - player.lastShot > player.shootDelay) {
+            player.bullets.push({
+                x: player.x + player.width / 2 - 2.5,
+                y: player.y,
+                width: 5,
+                height: 15,
+                color: '#ff1493'
+            });
+            player.lastShot = timestamp;
+        }
+        
+        // Update bullets
+        for (let i = player.bullets.length - 1; i >= 0; i--) {
+            player.bullets[i].y -= 10;
+            
+            // Remove bullets that are off screen
+            if (player.bullets[i].y + player.bullets[i].height < 0) {
+                player.bullets.splice(i, 1);
+            }
+        }
+        
+        // Update enemies
+        for (let i = enemies.length - 1; i >= 0; i--) {
+            enemies[i].y += enemies[i].speed;
+            
+            // Remove enemies that are off screen
+            if (enemies[i].y > canvas.height) {
+                enemies.splice(i, 1);
+                continue;
+            }
+            
+            // Check for bullet collisions
+            for (let j = player.bullets.length - 1; j >= 0; j--) {
+                if (checkCollision(enemies[i], player.bullets[j])) {
+                    // Add score
+                    score += 10;
+                    scoreElement.textContent = score;
+                    
+                    // Remove bullet and enemy
+                    player.bullets.splice(j, 1);
+                    enemies.splice(i, 1);
+                    
+                    // Random chance to drop a heart
+                    if (Math.random() < 0.2) {
+                        heartsList.push({
+                            x: enemies[i].x,
+                            y: enemies[i].y,
+                            width: 20,
+                            height: 20
+                        });
+                    }
+                    
+                    break;
+                }
+            }
+            
+            // Check for player collision
+            if (checkCollision(player, enemies[i])) {
+                hearts--;
+                heartsElement.textContent = hearts;
+                enemies.splice(i, 1);
+                
+                if (hearts <= 0) {
+                    gameOver = true;
+                    finalScoreElement.textContent = score;
+                    gameOverScreen.style.display = 'block';
+                    gameArea.style.display = 'none';
+                    return;
+                }
+            }
+        }
+        
+        // Update hearts
+        for (let i = heartsList.length - 1; i >= 0; i--) {
+            heartsList[i].y += 2;
+            
+            // Check for player collection
+            if (checkCollision(player, heartsList[i])) {
+                hearts = Math.min(3, hearts + 1);
+                heartsElement.textContent = hearts;
+                heartsList.splice(i, 1);
+            } else if (heartsList[i].y > canvas.height) {
+                heartsList.splice(i, 1);
+            }
+        }
+    }
+
+    function draw() {
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw player
+        ctx.fillStyle = player.color;
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+        
+        // Draw bullets
+        ctx.fillStyle = '#ff1493';
+        player.bullets.forEach(bullet => {
+            ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+        });
+        
+        // Draw enemies
+        ctx.fillStyle = '#9370db';
+        enemies.forEach(enemy => {
+            ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+        });
+        
+        // Draw hearts
+        ctx.fillStyle = '#ff0000';
+        heartsList.forEach(heart => {
+            drawHeart(heart.x, heart.y, heart.width, heart.height);
+        });
+    }
+
+    function drawHeart(x, y, width, height) {
+        const hw = width / 2;
+        const hh = height / 2;
+        
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(x + hw, y + hh / 2);
+        
+        // Draw heart shape
+        ctx.bezierCurveTo(
+            x + hw, y - hh / 2,
+            x + hw * 2, y,
+            x + hw, y + hh
+        );
+        
+        ctx.bezierCurveTo(
+            x, y,
+            x + hw, y - hh / 2,
+            x + hw, y + hh / 2
+        );
+        
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function spawnEnemies() {
+        if (gameOver) return;
+        
+        const enemy = {
+            x: Math.random() * (canvas.width - 40),
+            y: -40,
+            width: 40,
+            height: 40,
+            speed: 1 + Math.random() * 2
+        };
+        
+        enemies.push(enemy);
+        
+        // Spawn new enemy at random intervals
+        setTimeout(spawnEnemies, 1000 + Math.random() * 2000);
+    }
+
+    function checkCollision(rect1, rect2) {
+        return rect1.x < rect2.x + rect2.width &&
+               rect1.x + rect1.width > rect2.x &&
+               rect1.y < rect2.y + rect2.height &&
+               rect1.y + rect1.height > rect2.y;
+    }
+});
+  </script>
+  {% endblock %}
+</html>

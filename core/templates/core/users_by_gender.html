@@ -1,0 +1,42 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container">
+  <h3 class="mb-3">Available {{ gender|upper }} users</h3>
+  <div class="row">
+    {% for user in page_obj.object_list %}
+      <div class="col-md-4 mb-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            {% if user.photo %}
+              <img src="{{ user.photo.url }}" class="rounded-circle mb-2" style="width:80px;height:80px;object-fit:cover;">
+            {% else %}
+              <i class="bi bi-person-circle" style="font-size:48px"></i>
+            {% endif %}
+            <h5 class="mt-2">{{ user.username }}</h5>
+            <p class="text-muted mb-2">{{ user.get_gender_display }} • {{ user.age }}</p>
+            <a href="{% url 'start_conversation' user.pk %}" class="btn btn-sm btn-primary">Message</a>
+            <a href="{% url 'profile_detail' user.pk %}" class="btn btn-sm btn-outline-secondary ms-1">View</a>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <div class="col-12">
+        <div class="alert alert-info">No users available.</div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <nav aria-label="Page navigation">
+    <ul class="pagination">
+      {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+      {% endif %}
+      <li class="page-item disabled"><a class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</a></li>
+      {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+</div>
+{% endblock %}

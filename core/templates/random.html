@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Talk</title>
+</head>
+<body>
+    {% extends 'core/base.html' %}
+{% block content %}
+<h3>Random Profile</h3>
+{% if profile %}
+<a href="/profile/{{ profile.pk }}/">{{ profile.username }} — {{ profile.age }}</a>
+{% else %}
+<div class="alert alert-info">No profiles of opposite gender yet.</div>
+{% endif %}
+{% endblock %}
+</body>
+</html>

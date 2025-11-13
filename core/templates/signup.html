@@ -1,0 +1,166 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <style>
+    body {
+      background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Poppins", sans-serif;
+    }
+
+    .card {
+      border: none;
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+      background: #fff;
+      transition: transform 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+    }
+
+    .card-body {
+      padding: 2.5rem;
+    }
+
+    h3.card-title {
+      font-weight: 600;
+      color: #333;
+    }
+
+    label {
+      font-weight: 500;
+      color: #555;
+    }
+
+    input.form-control, select.form-select {
+      border-radius: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      transition: 0.3s;
+      width: 100%;
+    }
+
+    input.form-control:focus, select.form-select:focus {
+      border-color: #2575fc;
+      box-shadow: 0 0 6px rgba(37, 117, 252, 0.4);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #6a11cb, #2575fc);
+      border: none;
+      border-radius: 10px;
+      padding: 12px 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+      transition: 0.3s;
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #2575fc, #6a11cb);
+      transform: scale(1.03);
+    }
+
+    .form-check-input:checked {
+      background-color: #2575fc;
+      border-color: #2575fc;
+    }
+
+    .alert-danger {
+      border-radius: 10px;
+    }
+
+    .text-center a {
+      color: #2575fc;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .text-center a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <h3 class="card-title text-center mb-4">Create Account</h3>
+            
+            <form method="post" novalidate>
+              {% csrf_token %}
+              
+              {% if form.non_field_errors %}
+              <div class="alert alert-danger">
+                {% for error in form.non_field_errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+              {% endif %}
+
+              {% for field in form %}
+              <div class="form-group mb-3">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {% if field.name == 'gender' %}
+                  <div class="btn-group-vertical w-100" role="group">
+                    {% for radio in field %}
+                      <div class="form-check">
+                        {{ radio }}
+                        <label class="form-check-label" for="{{ radio.id_for_label }}">
+                          {{ radio.choice_label }}
+                        </label>
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  {{ field }}
+                {% endif %}
+                
+                {% if field.help_text %}
+                  <small class="form-text text-muted">{{ field.help_text }}</small>
+                {% endif %}
+                
+                {% if field.errors %}
+                  <div class="text-danger">
+                    {% for error in field.errors %}
+                      {{ error }}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+              {% endfor %}
+
+              <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg">Sign Up</button>
+              </div>
+            </form>
+
+            <hr class="my-4">
+            
+            <div class="text-center">
+              <p>Already have an account? <a href="{% url 'login' %}">Login</a></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+{% endblock %}

@@ -1,0 +1,481 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header bg-white">
+    <div class="d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center">
+        <strong class="me-2">Chat with:</strong>
+        {% for p in conversation.participants.all %}
+          {% if p != request.user %}
+            {% if p.photo %}
+              <img src="{{ p.photo.url }}" alt="{{ p.username }}" class="rounded-circle me-2" style="width:40px;height:40px;object-fit:cover;">
+            {% endif %}
+            <h5 class="mb-0">{{ p.username }}</h5>
+          {% endif %}
+        {% endfor %}
+      </div>
+      <a href="{% url 'conversations_list' %}" class="btn btn-outline-secondary btn-sm">All Conversations</a>
+    </div>
+  </div>
+  
+  <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+    <div id="messages">
+      {% for m in conversation_messages %}
+        {% if m.sender == request.user %}
+          <div class="d-flex mb-3 justify-content-end align-items-end" data-message-id="{{ m.id }}">
+            <div class="message-bubble message-mine">
+              <div class="message-content">{% if m.is_deleted %}<span class="text-muted fst-italic">Message deleted</span>{% else %}{{ m.content|linebreaksbr }}{% endif %}</div>
+              {% if not m.is_deleted %}
+                <div class="message-actions mt-1 text-end" style="opacity: 0.8">
+                  <button class="btn btn-sm btn-link text-light reply-message" title="Reply" data-content="{{ m.content }}">
+                    <i class="bi bi-reply"></i>
+                  </button>
+                  {% if m.sender == request.user %}
+                    <button class="btn btn-sm btn-link text-light edit-message" title="Edit">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-link text-light delete-message" title="Delete">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  {% endif %}
+                </div>
+              {% endif %}
+              <small class="text-light d-block text-end">
+                {{ m.timestamp|date:"g:i A" }} {% if m.edited_at %}<span class="fst-italic">(edited)</span>{% endif %}
+              </small>
+            </div>
+            <div class="ms-2">
+              {% if m.sender.photo %}
+                <img src="{{ m.sender.photo.url }}" alt="{{ m.sender.username }}" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;">
+              {% else %}
+                <i class="bi bi-person-circle" style="font-size:36px;color:#6c757d"></i>
+              {% endif %}
+            </div>
+          </div>
+        {% else %}
+          <div class="d-flex mb-3 align-items-start" data-message-id="{{ m.id }}">
+            <div class="me-2">
+              {% if m.sender.photo %}
+                <img src="{{ m.sender.photo.url }}" alt="{{ m.sender.username }}" class="rounded-circle" style="width:36px;height:36px;object-fit:cover;">
+              {% else %}
+                <i class="bi bi-person-circle" style="font-size:36px;color:#6c757d"></i>
+              {% endif %}
+            </div>
+            <div class="message-bubble message-other">
+              <small class="text-muted d-block mb-1">{{ m.sender.username }}</small>
+              <div class="message-content">{% if m.is_deleted %}<span class="text-muted fst-italic">Message deleted</span>{% else %}{{ m.content|linebreaksbr }}{% endif %}</div>
+              <small class="text-muted d-block text-end">
+                {{ m.timestamp|date:"g:i A" }} {% if m.edited_at %}<span class="fst-italic">(edited)</span>{% endif %}
+              </small>
+            </div>
+          </div>
+        {% endif %}
+      {% empty %}
+        <div class="text-center text-muted">
+          <p>No messages yet — say hi!</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="card-footer bg-white">
+    <form method="post" id="message-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="alert alert-danger" id="form-errors">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <div class="d-flex align-items-end gap-2">
+        <div class="me-2">
+          {% if request.user.photo %}
+          
+          {% else %}
+            <i class="bi bi-person-circle" style="font-size:38px;color:#6c757d"></i>
+          {% endif %}
+        </div>
+
+        <div class="flex-grow-1">
+          {{ form.content }}
+          <div class="d-flex mt-2 align-items-center">
+            <button type="button" class="btn btn-sm btn-light me-2" id="emoji-btn" title="Emoji">
+              <i class="bi bi-emoji-smile"></i>
+            </button>
+            <div id="emoji-panel" class="border rounded p-2 bg-white shadow position-absolute" 
+                 style="display:none; width:320px; z-index:1000; bottom:100%; left:0;">
+              <div class="d-flex mb-2 border-bottom pb-2">
+                <button class="btn btn-sm btn-light me-1 emoji-category active" data-category="smileys">😊</button>
+                <button class="btn btn-sm btn-light me-1 emoji-category" data-category="gestures">👋</button>
+                <button class="btn btn-sm btn-light me-1 emoji-category" data-category="love">❤️</button>
+                <button class="btn btn-sm btn-light me-1 emoji-category" data-category="nature">🌺</button>
+                <button class="btn btn-sm btn-light emoji-category" data-category="objects">🎈</button>
+              </div>
+              <div id="emoji-grid">
+                <!-- emojis will be inserted here by JS -->
+              </div>
+            </div>
+            <div class="small text-muted ms-2" id="attachment-preview" style="display:none;"></div>
+            <div id="reply-preview" class="small text-muted ms-2" style="display:none;">
+              <i class="bi bi-reply me-1"></i><span></span>
+              <button type="button" class="btn btn-sm btn-link p-0 ms-2" id="cancel-reply">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex flex-column align-items-end">
+          <input type="file" id="attach-file" style="display:none;">
+          <button type="button" class="btn btn-outline-secondary btn-sm mb-2" id="attach-btn" title="Attach">
+            <i class="bi bi-paperclip"></i>
+          </button>
+          <button type="submit" class="btn btn-primary" id="send-btn" title="Send">
+            <i class="bi bi-send"></i>
+          </button>
+        </div>
+      </div>
+
+      {% if form.content.errors %}
+        <div class="text-danger mt-2" id="content-errors">
+          {{ form.content.errors }}
+        </div>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Form elements
+    const form = document.getElementById('message-form');
+    const messagesContainer = document.getElementById('messages');
+    const formErrors = document.getElementById('form-errors');
+    const contentErrors = document.getElementById('content-errors');
+    const contentInput = document.querySelector('[name="content"]');
+    
+    // Emoji picker elements
+    const emojiBtn = document.getElementById('emoji-btn');
+    const emojiPanel = document.getElementById('emoji-panel');
+    const emojiGrid = document.getElementById('emoji-grid');
+    
+    // Reply elements
+    const replyPreview = document.getElementById('reply-preview');
+    const cancelReply = document.getElementById('cancel-reply');
+    let replyingTo = null;
+
+    // Attachment elements
+    const attachBtn = document.getElementById('attach-btn');
+    const attachFile = document.getElementById('attach-file');
+    const attachmentPreview = document.getElementById('attachment-preview');
+    
+    // Message editing
+    messagesContainer.addEventListener('click', function(e) {
+        if (e.target.classList.contains('edit-message') || e.target.closest('.edit-message')) {
+            const messageDiv = e.target.closest('[data-message-id]');
+            const messageId = messageDiv.dataset.messageId;
+            const contentDiv = messageDiv.querySelector('.message-content');
+            const originalContent = contentDiv.textContent;
+            
+            const textarea = document.createElement('textarea');
+            textarea.className = 'form-control';
+            textarea.value = originalContent;
+            contentDiv.replaceWith(textarea);
+            textarea.focus();
+            
+            function saveEdit() {
+                const newContent = textarea.value.trim();
+                if (newContent && newContent !== originalContent) {
+                    fetch(`/messages/${messageId}/edit/`, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ content: newContent })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'ok') {
+                            const newDiv = document.createElement('div');
+                            newDiv.className = 'message-content';
+                            newDiv.textContent = data.message.content;
+                            textarea.replaceWith(newDiv);
+                            messageDiv.querySelector('small:last-child').innerHTML = 
+                                `${data.message.edited_at} <span class="fst-italic">(edited)</span>`;
+                        }
+                    });
+                } else {
+                    const div = document.createElement('div');
+                    div.className = 'message-content';
+                    div.textContent = originalContent;
+                    textarea.replaceWith(div);
+                }
+            }
+            
+            textarea.addEventListener('blur', saveEdit);
+            textarea.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    textarea.blur();
+                }
+                if (e.key === 'Escape') {
+                    const div = document.createElement('div');
+                    div.className = 'message-content';
+                    div.textContent = originalContent;
+                    textarea.replaceWith(div);
+                }
+            });
+        }
+    });
+    
+    // Message deletion
+    messagesContainer.addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-message') || e.target.closest('.delete-message')) {
+            if (confirm('Are you sure you want to delete this message?')) {
+            const messageDiv = e.target.closest('[data-message-id]');
+                const messageId = messageDiv.dataset.messageId;
+                
+                fetch(`/messages/${messageId}/delete/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ok') {
+                        messageDiv.querySelector('.message-content').innerHTML = 
+                            '<div class="text-muted fst-italic">Message deleted</div>';
+                        messageDiv.querySelector('.message-actions').remove();
+                    }
+                });
+            }
+        }
+    });
+    
+    // Attachment controls (move outside submit so preview works before sending)
+    const attachBtn = document.getElementById('attach-btn');
+    const attachFile = document.getElementById('attach-file');
+    const attachmentPreview = document.getElementById('attachment-preview');
+
+    attachBtn.addEventListener('click', function() { attachFile.click(); });
+    attachFile.addEventListener('change', function() {
+      if (attachFile.files.length) {
+        attachmentPreview.style.display = 'block';
+        attachmentPreview.textContent = 'Selected: ' + attachFile.files[0].name;
+      } else {
+        attachmentPreview.style.display = 'none';
+        attachmentPreview.textContent = '';
+      }
+    });
+
+    // Emoji picker setup
+    const emojiBtn = document.getElementById('emoji-btn');
+    const emojiPanel = document.getElementById('emoji-panel');
+    const emojiGrid = document.getElementById('emoji-grid');
+    
+    // Organized emoji categories
+    const emojiCategories = {
+      smileys: ['😀','😁','😂','🤣','😊','😇','🙂','🙃','😉','😌','😍','🥰','😘','😗','😙','😚','😋','😛','😝','😜','�','🤨','🧐','🤓','😎','🤩','🥳','😏','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','🥺','😢','😭','😤','�','😡','🤬','🤯','😳','🥵','🥶','😱','😨','�','�','�','🤗','🤔','🤭','🤫','🤥','😶','�','😑','😬','🙄','😯','😦','😧','😮','😲','🥱','�😴','🤤','😪','�','🤐','🥴','🤢','🤮','🤧','😷','🤒','🤕','🤑','🤠'],
+      gestures: ['👋','🤚','✋','🖐','👌','🤌','🤏','✌️','🤞','🤟','🤘','🤙','👈','👉','👆','�','�','☝️','👍','👎','✊','👊','🤛','🤜','�','🙌','👐','🤲','🤝','�🙏','✍️','💪','🦾','🦿','🦵','🦶','👂','🦻','👃','🫀','🫁','🧠','🦷','🦴','👀','👁','👅','👄','💋','🩸'],
+      love: ['❤️','🧡','💛','💚','💙','💜','🤎','🖤','🤍','💔','❤️‍🔥','❤️‍🩹','❣️','�','💞','💓','💗','💖','💘','💝','💟','♥️','💌','💋','👩‍❤️‍👨','👨‍❤️‍👨','👩‍❤️‍👩','💑','👩‍❤️‍💋‍👨','👨‍❤️‍💋‍👨','👩‍❤️‍💋‍👩','💏'],
+      nature: ['🌵','🎄','🌲','🌳','🌴','🌱','🌿','☘️','🍀','🎍','🎋','🍃','🍂','🍁','🍄','🐚','🌾','💐','🌷','🌹','🥀','🌺','🌸','🌼','🌻','🌞','🌝','🌛','🌜','🌚','🌕','🌖','🌗','🌘','🌑','🌒','🌓','🌔','🌙','🌎','🌍','🌏','🪐','💫','⭐️','🌟','✨','⚡️','☄️','�','�🔥','🌪','🌈','☀️','🌤','⛅️','🌥','☁️','🌦','🌧','⛈','🌩','🌨','❄️','☃️','⛄️','🌬','�','💧','💦','☔️','☂️','🌊','🌫'],
+      objects: ['🎈','🎉','🎊','🎃','🎄','🎋','🎍','🎎','🎏','🎐','🎑','🧧','🎀','🎁','📩','📨','💌','📮','📪','📫','📬','📭','📦','📯','📜','📃','📄','📑','🧾','📊','📈','📉','🗒','🗓','📆','📅','🗑','📇','🗃','🗳','🗄','📋','📁','📂','🗂','🗞','📰','📓','📔','📒','📕','📗','📘','📙','📚','📖','🔖','🧷','🔗','📎','🖇','📐','📏','🧮','📌','📍','✂️','🖊','🖋','✒️','🖌','🖍','📝','✏️','🔍','🔎','🔏','🔐','�','�']
+    };
+    
+    let currentCategory = 'smileys';
+
+    function showEmojiCategory(category) {
+      currentCategory = category;
+      const emojis = emojiCategories[category];
+      buildEmojiGrid(emojis);
+      
+      // Update active category button
+      document.querySelectorAll('.emoji-category').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.category === category);
+      });
+    }
+
+    // Add event listeners for category buttons
+    document.querySelectorAll('.emoji-category').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        showEmojiCategory(e.target.dataset.category);
+      });
+    });
+
+    function buildEmojiGrid(emojis) {
+      emojiGrid.innerHTML = '';
+      const grid = document.createElement('div');
+      grid.style.display = 'grid';
+      grid.style.gridTemplateColumns = 'repeat(8, 1fr)';
+      grid.style.gap = '6px';
+      emojis.forEach(function(em) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-sm btn-light';
+        btn.style.padding = '6px';
+        btn.textContent = em;
+        btn.addEventListener('click', function() {
+          insertAtCursor(contentInput, em);
+          // keep the panel open for quick selection; if you want it to close, uncomment next line
+          // emojiPanel.style.display = 'none';
+          contentInput.focus();
+        });
+        grid.appendChild(btn);
+      });
+      emojiPanel.appendChild(grid);
+    }
+
+    });
+      grid.appendChild(btn);
+    });
+    emojiGrid.appendChild(grid);
+  }
+
+  // find the actual input or textarea for the form content
+    const contentInput = document.querySelector('[name="content"]');
+    function insertAtCursor(el, text) {
+      // Works for textarea/input
+      if (!el) return;
+      const start = el.selectionStart || 0;
+      const end = el.selectionEnd || 0;
+      const value = el.value || '';
+      el.value = value.slice(0, start) + text + value.slice(end);
+      // move cursor after inserted emoji
+      const newPos = start + text.length;
+      el.setSelectionRange(newPos, newPos);
+      // trigger input event if needed
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    emojiBtn.addEventListener('click', function() {
+      if (emojiPanel.style.display === 'none') {
+        showEmojiCategory(currentCategory);
+        emojiPanel.style.display = 'block';
+      } else {
+        emojiPanel.style.display = 'none';
+      }
+    });
+
+    // Handle reply functionality
+    let replyingTo = null;
+    const replyPreview = document.getElementById('reply-preview');
+    const cancelReply = document.getElementById('cancel-reply');
+
+    document.addEventListener('click', function(e) {
+      if (e.target.classList.contains('reply-message') || e.target.closest('.reply-message')) {
+        const messageDiv = e.target.closest('[data-message-id]');
+        const messageId = messageDiv.dataset.messageId;
+        const content = e.target.closest('.reply-message').dataset.content;
+        
+        replyingTo = messageId;
+        replyPreview.style.display = 'inline-block';
+        replyPreview.querySelector('span').textContent = content.substring(0, 50) + (content.length > 50 ? '...' : '');
+        contentInput.focus();
+      }
+    });
+
+    cancelReply.addEventListener('click', function() {
+      replyingTo = null;
+      replyPreview.style.display = 'none';
+    });
+
+    // Close emoji panel when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!emojiPanel.contains(e.target) && e.target !== emojiBtn) {
+        emojiPanel.style.display = 'none';
+      }
+    });
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(form);
+        const content = formData.get('content');
+    const attachmentName = document.getElementById('attach-file').files.length ? document.getElementById('attach-file').files[0].name : '';
+        
+        if (!content.trim()) {
+            return;
+        }
+        
+        // Clear any existing errors
+        if (formErrors) formErrors.style.display = 'none';
+        if (contentErrors) contentErrors.style.display = 'none';
+        
+    fetch(window.location.href, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': formData.get('csrfmiddlewaretoken'),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+        content: content,
+        attachment: attachmentName
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'ok') {
+        const attachmentHtml = data.message.attachment ? `<div class="small text-muted">Attachment: ${data.message.attachment}</div>` : '';
+        const messageHtml = `
+          <div class="message-bubble message-mine">
+            <div>${data.message.content}</div>
+            ${attachmentHtml}
+            <small class="text-light d-block text-end">
+              ${data.message.timestamp}
+            </small>
+          </div>
+        `;
+                
+                messagesContainer.insertAdjacentHTML('beforeend', messageHtml);
+                form.reset();
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            } else {
+                if (data.errors && data.errors.content) {
+                    if (contentErrors) {
+                        contentErrors.innerHTML = data.errors.content.join('<br>');
+                        contentErrors.style.display = 'block';
+                    }
+                } else {
+                    if (formErrors) {
+                        formErrors.innerHTML = 'Error sending message. Please try again.';
+                        formErrors.style.display = 'block';
+                    }
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (formErrors) {
+                formErrors.innerHTML = 'Error sending message. Please try again.';
+                formErrors.style.display = 'block';
+            }
+        });
+    
+      // Attachment controls
+      const attachBtn = document.getElementById('attach-btn');
+      const attachFile = document.getElementById('attach-file');
+      const attachmentPreview = document.getElementById('attachment-preview');
+
+      attachBtn.addEventListener('click', function() { attachFile.click(); });
+      attachFile.addEventListener('change', function() {
+        if (attachFile.files.length) {
+          attachmentPreview.style.display = 'block';
+          attachmentPreview.textContent = 'Selected: ' + attachFile.files[0].name;
+        } else {
+          attachmentPreview.style.display = 'none';
+          attachmentPreview.textContent = '';
+        }
+      });
+    });
+    
+    // Scroll to bottom on load
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+});
+</script>
+{% endblock %}
